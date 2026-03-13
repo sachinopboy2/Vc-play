@@ -1,7 +1,7 @@
 import asyncio
 from pyrogram import Client, filters
 from pytgcalls import PyTgCalls
-from pytgcalls.types import AudioPiped # यह 1.0.0 वर्ज़न के लिए है
+from pytgcalls.types import MediaStream # नए वर्जन में AudioPiped की जगह MediaStream आ गया है
 from config import API_ID, API_HASH, BOT_TOKEN, OWNER_ID
 
 bot = Client("MasterBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -52,7 +52,10 @@ async def otp_cmd(client, message):
 @bot.on_message(filters.command("play") & filters.private)
 async def play_voice(client, message):
     if message.from_user.id not in SUDO_USERS: return
-    target = message.text.split(None, 1)[1]
+    try:
+        target = message.text.split(None, 1)[1]
+    except:
+        return await message.reply("सही तरीका: /play @username")
     
     await message.reply(f"अब {target} के लिए वॉइस मैसेज भेजें।")
 
@@ -60,11 +63,11 @@ async def play_voice(client, message):
     async def stream(c, m):
         path = await m.download()
         try:
-            await call_py.join_group_call(target, AudioPiped(path))
+            # यहाँ MediaStream यूज़ होगा नए वर्जन के लिए
+            await call_py.play(target, MediaStream(path))
             await m.reply(f"🎶 प्ले हो रहा है!")
         except Exception as e:
             await m.reply(f"Error: {e}")
 
 print("बोट स्टार्ट हो रहा है...")
 bot.run()
-
