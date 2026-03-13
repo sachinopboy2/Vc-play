@@ -1,9 +1,10 @@
 import asyncio
 from pyrogram import Client, filters
 from pytgcalls import PyTgCalls
-from pytgcalls.types import MediaStream # नए वर्जन में AudioPiped की जगह MediaStream आ गया है
+from pytgcalls.types import AudioPiped
 from config import API_ID, API_HASH, BOT_TOKEN, OWNER_ID
 
+# बोट और यूजरबोट सेटअप
 bot = Client("MasterBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 user_bot = Client("user_session", api_id=API_ID, api_hash=API_HASH)
 call_py = PyTgCalls(user_bot)
@@ -25,7 +26,7 @@ async def approve(client, message):
         user_id = user.id
     else: return
     SUDO_USERS.add(user_id)
-    await message.reply(f"✅ User {user_id} ऑथराइज्ड है।")
+    await message.reply(f"✅ User {user_id} अब ऑथराइज्ड है।")
 
 @bot.on_message(filters.command("login") & filters.private)
 async def login_cmd(client, message):
@@ -45,7 +46,6 @@ async def otp_cmd(client, message):
     try:
         await user_bot.sign_in(phone, p_hash, otp)
         await message.reply("✅ लॉगिन सफल! अब /play [ID/Username] भेजें।")
-        await call_py.start()
     except Exception as e:
         await message.reply(f"Error: {e}")
 
@@ -61,13 +61,15 @@ async def play_voice(client, message):
 
     @bot.on_message(filters.voice & filters.private)
     async def stream(c, m):
+        msg = await m.reply("डाउनलोड हो रहा है...")
         path = await m.download()
         try:
-            # यहाँ MediaStream यूज़ होगा नए वर्जन के लिए
-            await call_py.play(target, MediaStream(path))
-            await m.reply(f"🎶 प्ले हो रहा है!")
+            if not call_py.active:
+                await call_py.start()
+            await call_py.join_group_call(target, AudioPiped(path))
+            await msg.edit(f"🎶 सफलता पूर्वक {target} पर प्ले हो रहा है!")
         except Exception as e:
-            await m.reply(f"Error: {e}")
+            await msg.edit(f"Error: {e}")
 
 print("बोट स्टार्ट हो रहा है...")
 bot.run()
